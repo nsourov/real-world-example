@@ -41,6 +41,7 @@ require('./models/User');
 require('./models/Article');
 require('./models/Comment');
 require('./models/Role');
+require('./models/Payment');
 require('./config/passport');
 
 app.use(require('./routes'));

@@ -142,15 +142,25 @@ router.post("/", auth.required, function(req, res, next) {
       if (!user) {
         return res.sendStatus(401);
       }
+      /**
+       * TODO: Need to make dynamic credit. Not static credit 5 and comment credit 1
+       */
+      if (user.credit < 5) {
+        return res.status(400).json({
+          message:
+            "You don't have enough credit to post. Please buy credits to post or make comment to gain credits"
+        });
+      } else {
+        var article = new Article(req.body.article);
 
-      var article = new Article(req.body.article);
-
-      article.author = user;
-
-      return article.save().then(function() {
-        console.log(article.author);
-        return res.json({ article: article.toJSONFor(user) });
-      });
+        article.author = user;
+        user.credit = user.credit - 5;
+        user.save().then(function() {
+          return article.save().then(function() {
+            return res.json({ article: article.toJSONFor(user) });
+          });
+        });
+      }
     })
     .catch(next);
 });
@@ -172,9 +182,7 @@ router.get("/:article", auth.optional, function(req, res, next) {
 // update article
 router.put("/:article", auth.required, async function(req, res, next) {
   User.findById(req.payload.id).then(function(user) {
-    if (
-      req.article.author._id.toString() === req.payload.id.toString()
-    ) {
+    if (req.article.author._id.toString() === req.payload.id.toString()) {
       if (typeof req.body.article.title !== "undefined") {
         req.article.title = req.body.article.title;
       }
@@ -289,6 +297,32 @@ router.get("/:article/comments", auth.optional, function(req, res, next) {
 });
 
 // create a new comment
+// router.post("/:article/comments", auth.required, function(req, res, next) {
+//   User.findById(req.payload.id)
+//     .then(function(user) {
+//       if (!user) {
+//         return res.sendStatus(401);
+//       }
+//       var comment = new Comment(req.body.comment);
+//       comment.article = req.article;
+//       comment.author = user;
+//       /**
+//        * NOTE: Need to make that 1 credit dynamic so that admin can change that later
+//        */
+//       user.credit = user.credit + 1;
+//       user.save().then(function() {
+//         comment.save().then(function() {
+//           req.article.comments.push(comment);
+//           console.log(comment)
+//           req.article.save().then(function(article) {
+//             return res.json({ comment: comment.toJSONFor(user) });
+//           });
+//         });
+//       });
+//     })
+//     .catch(next);
+// });
+
 router.post("/:article/comments", auth.required, function(req, res, next) {
   User.findById(req.payload.id)
     .then(function(user) {
@@ -299,13 +333,12 @@ router.post("/:article/comments", auth.required, function(req, res, next) {
       var comment = new Comment(req.body.comment);
       comment.article = req.article;
       comment.author = user;
-
-      return comment.save().then(function() {
+      comment.save().then(function() {
         req.article.comments.push(comment);
-
-        return req.article.save().then(function(article) {
-          res.json({ comment: comment.toJSONFor(user) });
-        });
+        // return req.article.save().then(function(article) {
+        //   res.json({ comment: comment.toJSONFor(user) });
+        // });
+        return res.json({ comment });
       });
     })
     .catch(next);

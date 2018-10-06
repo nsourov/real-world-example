@@ -26,6 +26,10 @@ var UserSchema = new mongoose.Schema(
       type: String,
       default: "user"
     },
+    credit: {
+      type: Number,
+      default: 20
+    },
     bio: String,
     image: String,
     favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: "Article" }],
@@ -63,6 +67,7 @@ UserSchema.methods.generateJWT = function() {
       username: this.username,
       email: this.email,
       role: this.role,
+      credit: this.credit,
       exp: parseInt(exp.getTime() / 1000)
     },
     secret
@@ -74,6 +79,7 @@ UserSchema.methods.toAuthJSON = function() {
     username: this.username,
     email: this.email,
     role: this.role,
+    credit: this.credit,
     token: this.generateJWT(),
     bio: this.bio,
     image: this.image
